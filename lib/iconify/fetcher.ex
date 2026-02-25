@@ -56,7 +56,8 @@ defmodule Iconify.Fetcher do
       # => %{"user" => %Icon{}, "home" => %Icon{}}
 
   """
-  @spec fetch_icons(String.t(), [String.t()]) :: {:ok, %{String.t() => Icon.t()}} | {:error, term()}
+  @spec fetch_icons(String.t(), [String.t()]) ::
+          {:ok, %{String.t() => Icon.t()}} | {:error, term()}
   def fetch_icons(prefix, names) when is_binary(prefix) and is_list(names) do
     ensure_req!()
 
