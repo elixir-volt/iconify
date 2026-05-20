@@ -1,12 +1,30 @@
 # Iconify
 
-Elixir library for working with [Iconify](https://iconify.design) icons.
+[![Hex.pm](https://img.shields.io/hexpm/v/iconify.svg)](https://hex.pm/packages/iconify) [![Documentation](https://img.shields.io/badge/documentation-gray)](https://hexdocs.pm/iconify)
 
-Access 200,000+ icons from 150+ icon sets. Browse available icons at [icon-sets.iconify.design](https://icon-sets.iconify.design).
+Iconify data and SVG rendering for Elixir. Load, fetch, resolve aliases, transform, and render icons from the [Iconify](https://iconify.design) ecosystem without adding JavaScript to your app.
+
+```elixir
+{:ok, icon} = Iconify.Fetcher.fetch_icon("lucide", "settings")
+Iconify.to_svg(icon, class: "size-5")
+```
+
+Iconify gives you access to 200,000+ icons from 150+ icon sets. Browse them at [icon-sets.iconify.design](https://icon-sets.iconify.design).
+
+## Why Iconify
+
+Iconify packages usually target frontend JavaScript. This package gives Elixir code the same icon data model:
+
+- Parses standard IconifyJSON icon sets
+- Resolves aliases and alias chains
+- Applies Iconify rotations and flips
+- Fetches icon sets from `@iconify-json/*` packages
+- Fetches individual icons from the Iconify API
+- Renders inline SVG strings with safe attribute escaping
+
+It is the core package used by [`phoenix_iconify`](https://hex.pm/packages/phoenix_iconify), but it also works in any Elixir project that needs server-side SVG output.
 
 ## Installation
-
-Add `iconify` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -16,77 +34,106 @@ def deps do
 end
 ```
 
-## Usage
-
-### Loading Icon Sets
+## Fetch one icon
 
 ```elixir
-# From a local file
-{:ok, set} = Iconify.Set.load("path/to/heroicons.json")
+{:ok, icon} = Iconify.Fetcher.fetch_icon("lucide", "settings")
 
-# From a JSON string
-{:ok, set} = Iconify.Set.parse(json_string)
+Iconify.to_svg(icon, class: "size-5 text-zinc-700")
 ```
 
-### Getting Icons
+## Load an icon set
+
+Use local IconifyJSON when you want deterministic builds or offline rendering:
 
 ```elixir
-# Get an icon from a set
-{:ok, icon} = Iconify.Set.get(set, "user")
+{:ok, set} = Iconify.Set.load("priv/iconify/lucide.json")
+{:ok, icon} = Iconify.Set.get(set, "settings")
 
-# Or raise if not found
-icon = Iconify.Set.get!(set, "user")
+Iconify.to_svg(icon, class: "size-5")
 ```
 
-### Rendering SVG
+You can also parse JSON you already have:
 
 ```elixir
-# Basic rendering
-svg = Iconify.to_svg(icon)
-# => "<svg xmlns=\"...\" viewBox=\"0 0 24 24\">...</svg>"
-
-# With attributes
-svg = Iconify.to_svg(icon, class: "w-6 h-6", id: "user-icon")
+{:ok, set} = Iconify.Set.parse(json)
 ```
 
-### Fetching from Iconify
+## Fetch icon sets
 
-Iconify includes its HTTP dependency, so you can fetch icons directly:
+Download complete icon sets from npm packages such as `@iconify-json/lucide`:
 
 ```elixir
-# Fetch entire icon set from NPM
-{:ok, set} = Iconify.Fetcher.fetch_set("heroicons")
-
-# Fetch specific icons from Iconify API
-{:ok, icons} = Iconify.Fetcher.fetch_icons("heroicons", ["user", "home"])
-
-# Fetch single icon
-{:ok, icon} = Iconify.Fetcher.fetch_icon("heroicons", "user")
+{:ok, set} = Iconify.Fetcher.fetch_set("lucide")
+{:ok, icon} = Iconify.Set.get(set, "settings")
 ```
 
-## Phoenix Integration
+Fetch several icons from the Iconify API:
 
-For Phoenix LiveView integration with compile-time icon discovery, see [phoenix_iconify](https://hex.pm/packages/phoenix_iconify).
+```elixir
+{:ok, icons} = Iconify.Fetcher.fetch_icons("lucide", ["settings", "user", "x"])
+icons["settings"]
+```
 
-## IconifyJSON Format
+## Render SVG
 
-This library works with the standard [IconifyJSON format](https://iconify.design/docs/types/iconify-json.html):
+```elixir
+Iconify.to_svg(icon,
+  class: "size-5",
+  id: "settings-icon",
+  aria_hidden: "true"
+)
+```
+
+The renderer forwards extra attributes to `<svg>` and escapes attribute values.
+
+Transformations are supported both from Iconify aliases and render options:
+
+```elixir
+Iconify.to_svg(icon, rotate: 1)
+Iconify.to_svg(icon, h_flip: true)
+Iconify.to_svg(icon, v_flip: true)
+```
+
+## Icon names
+
+Use Iconify's standard `prefix:name` format:
+
+```elixir
+Iconify.parse_name("lucide:settings")
+# {:ok, "lucide", "settings"}
+```
+
+## Phoenix apps
+
+For Phoenix and LiveView, use [`phoenix_iconify`](https://hex.pm/packages/phoenix_iconify):
+
+```heex
+<.icon name="lucide:settings" class="size-5" />
+```
+
+It discovers icons at compile time, writes a JSON manifest, and renders inline SVGs from the server.
+
+## IconifyJSON
+
+Iconify works with the standard [IconifyJSON format](https://iconify.design/docs/types/iconify-json.html):
 
 ```json
 {
-  "prefix": "heroicons",
+  "prefix": "lucide",
   "width": 24,
   "height": 24,
   "icons": {
-    "user": {
-      "body": "<path fill=\"currentColor\" d=\"...\"/>"
+    "settings": {
+      "body": "<path d=\"...\"/>"
     }
   }
 }
 ```
 
 Icon sets are available from:
-- NPM packages: `@iconify-json/{prefix}` (e.g., `@iconify-json/heroicons`)
+
+- npm packages: `@iconify-json/{prefix}`
 - Iconify API: `api.iconify.design`
 
 ## License
