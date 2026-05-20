@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.0
+
+- Replace SVG IDs during rendering with Erlang's `:xmerl` to avoid duplicate ID collisions
+- Render SVG and CSS-mode wrapper elements with `:xmerl`
+- Add Iconify-style dimension calculation and `1em` defaults
+- Add `color`, `inline`, `mask`, and `bg` render options
+- Preserve IconifyJSON metadata on `%Iconify.Set{}`
+
 ## v0.2.0
 
 - Align IconifyJSON parsing with Elixir structs and Jason encoding

@@ -45,11 +45,11 @@ defmodule Iconify do
 
       iex> icon = %Iconify.Icon{name: "user", body: "<path d=\\"M10 10\\"/>", width: 24, height: 24}
       iex> Iconify.to_svg(icon)
-      ~s(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 10"/></svg>)
+      ~s(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" height="1em" width="1em"><path d="M10 10"/></svg>)
 
       iex> icon = %Iconify.Icon{name: "user", body: "<path d=\\"M10 10\\"/>", width: 24, height: 24}
       iex> Iconify.to_svg(icon, class: "w-6 h-6")
-      ~s(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="w-6 h-6"><path d="M10 10"/></svg>)
+      ~s(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" height="1em" width="1em" class="w-6 h-6"><path d="M10 10"/></svg>)
 
   """
   @spec to_svg(Icon.t(), keyword()) :: String.t()

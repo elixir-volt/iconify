@@ -9,6 +9,20 @@ defmodule Iconify.SetTest do
     "prefix": "test",
     "width": 24,
     "height": 24,
+    "provider": "",
+    "info": {
+      "name": "Test Icons",
+      "author": {"name": "Tester"},
+      "license": {"title": "MIT"}
+    },
+    "categories": {
+      "People": ["user"]
+    },
+    "chars": {
+      "f101": "user"
+    },
+    "lastModified": 1700000000,
+    "not_found": ["missing"],
     "icons": {
       "user": {
         "body": "<path d=\\"M10\\"/>"
@@ -40,6 +54,11 @@ defmodule Iconify.SetTest do
       assert set.prefix == "test"
       assert set.width == 24
       assert set.height == 24
+      assert set.info["name"] == "Test Icons"
+      assert set.categories["People"] == ["user"]
+      assert set.chars["f101"] == "user"
+      assert set.last_modified == 1_700_000_000
+      assert set.not_found == ["missing"]
       assert map_size(set.icons) == 2
       assert map_size(set.aliases) == 2
     end

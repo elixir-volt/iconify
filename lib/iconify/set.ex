@@ -13,7 +13,16 @@ defmodule Iconify.Set do
           width: pos_integer(),
           height: pos_integer(),
           left: integer(),
-          top: integer()
+          top: integer(),
+          provider: String.t() | nil,
+          info: map() | nil,
+          chars: map() | nil,
+          categories: map() | nil,
+          themes: map() | nil,
+          prefixes: map() | nil,
+          suffixes: map() | nil,
+          last_modified: integer() | nil,
+          not_found: [String.t()]
         }
 
   @enforce_keys [:prefix]
@@ -24,10 +33,36 @@ defmodule Iconify.Set do
     width: 16,
     height: 16,
     left: 0,
-    top: 0
+    top: 0,
+    provider: nil,
+    info: nil,
+    chars: nil,
+    categories: nil,
+    themes: nil,
+    prefixes: nil,
+    suffixes: nil,
+    last_modified: nil,
+    not_found: []
   ]
 
-  @keys [:prefix, :icons, :aliases, :width, :height, :left, :top]
+  @keys [
+    :prefix,
+    :icons,
+    :aliases,
+    :width,
+    :height,
+    :left,
+    :top,
+    :provider,
+    :info,
+    :chars,
+    :categories,
+    :themes,
+    :prefixes,
+    :suffixes,
+    :last_modified,
+    :not_found
+  ]
 
   @alias_keys [:parent, :left, :top, :width, :height, :rotate, :h_flip, :v_flip, :hidden]
 

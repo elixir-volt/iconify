@@ -1,7 +1,7 @@
 defmodule Iconify.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.3.0"
   @source_url "https://github.com/elixir-volt/iconify"
 
   def project do
@@ -21,7 +21,7 @@ defmodule Iconify.MixProject do
 
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :xmerl]
     ]
   end
 

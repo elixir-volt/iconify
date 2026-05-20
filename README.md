@@ -18,6 +18,8 @@ Iconify packages usually target frontend JavaScript. This package gives Elixir c
 - Parses standard IconifyJSON icon sets
 - Resolves aliases and alias chains
 - Applies Iconify rotations and flips
+- Rewrites SVG IDs with Erlang's `:xmerl` to avoid duplicate gradient/mask collisions
+- Preserves IconifyJSON metadata such as `info`, `categories`, and `chars`
 - Fetches icon sets from `@iconify-json/*` packages
 - Fetches individual icons from the Iconify API
 - Renders inline SVG strings with safe attribute escaping
@@ -85,7 +87,14 @@ Iconify.to_svg(icon,
 )
 ```
 
-The renderer forwards extra attributes to `<svg>` and escapes attribute values.
+The renderer forwards extra attributes to `<svg>` and escapes attribute values. By default it follows Iconify's sizing behavior: icons render as `1em` high and preserve their aspect ratio unless you pass `width` or `height`.
+
+```elixir
+Iconify.to_svg(icon, height: 24)       # width is calculated from the viewBox
+Iconify.to_svg(icon, width: "unset")   # omit the width attribute
+Iconify.to_svg(icon, color: "#0f172a") # colors currentColor icons
+Iconify.to_svg(icon, inline: true)     # align with text baseline
+```
 
 Transformations are supported both from Iconify aliases and render options:
 
@@ -94,6 +103,15 @@ Iconify.to_svg(icon, rotate: 1)
 Iconify.to_svg(icon, h_flip: true)
 Iconify.to_svg(icon, v_flip: true)
 ```
+
+CSS mask/background rendering is available when you want an Iconify-style CSS icon:
+
+```elixir
+Iconify.to_svg(icon, mode: "mask", class: "icon")
+Iconify.to_svg(icon, mode: "bg", class: "icon")
+```
+
+IDs inside SVG bodies are replaced by default, so rendering the same icon multiple times does not create duplicate `id` collisions for gradients, masks, clip paths, or animations.
 
 ## Icon names
 
@@ -116,7 +134,7 @@ It discovers icons at compile time, writes a JSON manifest, and renders inline S
 
 ## IconifyJSON
 
-Iconify works with the standard [IconifyJSON format](https://iconify.design/docs/types/iconify-json.html):
+Iconify works with the standard [IconifyJSON format](https://iconify.design/docs/types/iconify-json.html). Renderable icon data is normalized into `%Iconify.Icon{}` structs, while icon set metadata remains available on `%Iconify.Set{}`:
 
 ```json
 {
@@ -130,6 +148,8 @@ Iconify works with the standard [IconifyJSON format](https://iconify.design/docs
   }
 }
 ```
+
+Metadata fields such as `provider`, `info`, `chars`, `categories`, `themes`, `prefixes`, `suffixes`, `last_modified`, and `not_found` are preserved when present.
 
 Icon sets are available from:
 
