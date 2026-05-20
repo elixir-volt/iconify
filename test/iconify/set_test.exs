@@ -22,6 +22,12 @@ defmodule Iconify.SetTest do
     "aliases": {
       "person": {
         "parent": "user"
+      },
+      "profile": {
+        "parent": "person",
+        "width": 32,
+        "hFlip": true,
+        "rotate": 1
       }
     }
   }
@@ -35,7 +41,7 @@ defmodule Iconify.SetTest do
       assert set.width == 24
       assert set.height == 24
       assert map_size(set.icons) == 2
-      assert map_size(set.aliases) == 1
+      assert map_size(set.aliases) == 2
     end
 
     test "uses default dimensions for icons" do
@@ -69,7 +75,17 @@ defmodule Iconify.SetTest do
 
     test "resolves aliases", %{set: set} do
       assert {:ok, icon} = Set.get(set, "person")
-      assert icon.name == "user"
+      assert icon.name == "person"
+    end
+
+    test "resolves alias chains with dimensions and transformations", %{set: set} do
+      assert {:ok, icon} = Set.get(set, "profile")
+      assert icon.name == "profile"
+      assert icon.body == ~s(<path d="M10"/>)
+      assert icon.width == 32
+      assert icon.height == 24
+      assert icon.h_flip
+      assert icon.rotate == 1
     end
 
     test "returns error for unknown icon", %{set: set} do

@@ -4,35 +4,20 @@ defmodule Iconify.IconTest do
 
   alias Iconify.Icon
 
-  describe "new/3" do
-    test "creates icon with required fields" do
-      icon = Icon.new("user", %{"body" => "<path/>"})
+  describe "struct defaults" do
+    test "sets Iconify defaults" do
+      icon = %Icon{name: "user", body: "<path/>"}
 
       assert icon.name == "user"
       assert icon.body == "<path/>"
-      assert icon.width == 24
-      assert icon.height == 24
-    end
-
-    test "uses dimensions from data" do
-      icon = Icon.new("user", %{"body" => "<path/>", "width" => 20, "height" => 16})
-
-      assert icon.width == 20
+      assert icon.width == 16
       assert icon.height == 16
-    end
-
-    test "uses dimensions from defaults" do
-      icon = Icon.new("user", %{"body" => "<path/>"}, width: 32, height: 32)
-
-      assert icon.width == 32
-      assert icon.height == 32
-    end
-
-    test "data takes precedence over defaults" do
-      icon = Icon.new("user", %{"body" => "<path/>", "width" => 20}, width: 32, height: 32)
-
-      assert icon.width == 20
-      assert icon.height == 32
+      assert icon.left == 0
+      assert icon.top == 0
+      assert icon.rotate == 0
+      refute icon.h_flip
+      refute icon.v_flip
+      refute icon.hidden
     end
   end
 

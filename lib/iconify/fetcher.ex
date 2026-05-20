@@ -2,8 +2,6 @@ defmodule Iconify.Fetcher do
   @moduledoc """
   Fetches icon data from Iconify sources.
 
-  Requires the `req` dependency to be installed.
-
   ## Sources
 
     * **NPM** - Fetches complete icon sets from `@iconify-json/{prefix}` packages
@@ -37,8 +35,6 @@ defmodule Iconify.Fetcher do
   """
   @spec fetch_set(String.t()) :: {:ok, Set.t()} | {:error, term()}
   def fetch_set(prefix) when is_binary(prefix) do
-    ensure_req!()
-
     with {:ok, tarball_url} <- get_tarball_url(prefix),
          {:ok, json} <- download_and_extract_icons(tarball_url) do
       Set.parse(json)
@@ -59,29 +55,12 @@ defmodule Iconify.Fetcher do
   @spec fetch_icons(String.t(), [String.t()]) ::
           {:ok, %{String.t() => Icon.t()}} | {:error, term()}
   def fetch_icons(prefix, names) when is_binary(prefix) and is_list(names) do
-    ensure_req!()
-
     icons_param = Enum.join(names, ",")
     url = "#{@iconify_api}/#{prefix}.json?icons=#{icons_param}"
 
-    with {:ok, data} <- req_get_json(url) do
-      default_width = data["width"] || 24
-      default_height = data["height"] || 24
-
-      defaults = [
-        width: default_width,
-        height: default_height,
-        left: data["left"] || 0,
-        top: data["top"] || 0
-      ]
-
-      icons =
-        data
-        |> Map.get("icons", %{})
-        |> Map.new(fn {name, icon_data} ->
-          {name, Icon.new(name, icon_data, defaults)}
-        end)
-
+    with {:ok, json} <- req_get_body(url),
+         {:ok, set} <- Set.parse(json) do
+      icons = Map.new(names, fn name -> {name, Set.get!(set, name)} end)
       {:ok, icons}
     end
   end
@@ -127,7 +106,7 @@ defmodule Iconify.Fetcher do
   end
 
   defp download_and_extract_icons(tarball_url) do
-    with {:ok, body} <- req_get_binary(tarball_url) do
+    with {:ok, body} <- req_get_body(tarball_url) do
       extract_icons_json(body)
     end
   end
@@ -145,34 +124,18 @@ defmodule Iconify.Fetcher do
     end
   end
 
-  defp req_get_json(url) do
-    case Req.get(url) do
-      {:ok, %{status: 200, body: body}} when is_map(body) -> {:ok, body}
-      {:ok, %{status: 200, body: body}} when is_binary(body) -> Jason.decode(body)
-      {:ok, %{status: 404}} -> {:error, :not_found}
-      {:ok, %{status: status}} -> {:error, {:http_error, status}}
-      {:error, reason} -> {:error, reason}
+  defp req_get_json(url, opts \\ []) do
+    with {:ok, body} <- req_get_body(url) do
+      Jason.decode(body, opts)
     end
   end
 
-  defp req_get_binary(url) do
+  defp req_get_body(url) do
     case Req.get(url, decode_body: false) do
       {:ok, %{status: 200, body: body}} -> {:ok, body}
       {:ok, %{status: 404}} -> {:error, :not_found}
       {:ok, %{status: status}} -> {:error, {:http_error, status}}
       {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp ensure_req! do
-    unless Code.ensure_loaded?(Req) do
-      raise """
-      The :req dependency is required for fetching icons.
-
-      Add it to your mix.exs:
-
-          {:req, "~> 0.5"}
-      """
     end
   end
 end

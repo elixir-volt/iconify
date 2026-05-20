@@ -11,8 +11,7 @@ Add `iconify` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:iconify, "~> 0.1.0"},
-    {:req, "~> 0.5"}  # Optional, for fetching icons
+    {:iconify, "~> 0.2.0"}
   ]
 end
 ```
@@ -52,7 +51,7 @@ svg = Iconify.to_svg(icon, class: "w-6 h-6", id: "user-icon")
 
 ### Fetching from Iconify
 
-If you have `req` installed, you can fetch icons directly:
+Iconify includes its HTTP dependency, so you can fetch icons directly:
 
 ```elixir
 # Fetch entire icon set from NPM

@@ -1,30 +1,19 @@
 defmodule Iconify.Set do
   @moduledoc """
   Represents an Iconify icon set (collection of icons with a common prefix).
-
-  ## Loading Icon Sets
-
-      # From a file
-      {:ok, set} = Iconify.Set.load("path/to/heroicons.json")
-
-      # From a JSON string
-      {:ok, set} = Iconify.Set.parse(json_string)
-
-  ## Getting Icons
-
-      {:ok, icon} = Iconify.Set.get(set, "user")
-      icon = Iconify.Set.get!(set, "user")
-
   """
 
   alias Iconify.Icon
 
+  @derive Jason.Encoder
   @type t :: %__MODULE__{
           prefix: String.t(),
           icons: %{String.t() => Icon.t()},
-          aliases: %{String.t() => String.t()},
+          aliases: %{String.t() => map()},
           width: pos_integer(),
-          height: pos_integer()
+          height: pos_integer(),
+          left: integer(),
+          top: integer()
         }
 
   @enforce_keys [:prefix]
@@ -32,23 +21,23 @@ defmodule Iconify.Set do
     :prefix,
     icons: %{},
     aliases: %{},
-    width: 24,
-    height: 24
+    width: 16,
+    height: 16,
+    left: 0,
+    top: 0
   ]
+
+  @keys [:prefix, :icons, :aliases, :width, :height, :left, :top]
+
+  @alias_keys [:parent, :left, :top, :width, :height, :rotate, :h_flip, :v_flip, :hidden]
 
   @doc """
   Loads an icon set from a JSON file.
-
-  ## Examples
-
-      {:ok, set} = Iconify.Set.load("priv/iconify/heroicons.json")
-
   """
   @spec load(Path.t()) :: {:ok, t()} | {:error, term()}
   def load(path) do
-    with {:ok, contents} <- File.read(path),
-         {:ok, set} <- parse(contents) do
-      {:ok, set}
+    with {:ok, contents} <- File.read(path) do
+      parse(contents)
     end
   end
 
@@ -65,12 +54,6 @@ defmodule Iconify.Set do
 
   @doc """
   Parses an icon set from a JSON string (IconifyJSON format).
-
-  ## Examples
-
-      json = ~s({"prefix": "heroicons", "icons": {"user": {"body": "<path/>"}}})
-      {:ok, set} = Iconify.Set.parse(json)
-
   """
   @spec parse(String.t()) :: {:ok, t()} | {:error, term()}
   def parse(json) when is_binary(json) do
@@ -80,67 +63,35 @@ defmodule Iconify.Set do
   end
 
   @doc """
-  Parses an icon set from a decoded JSON map.
+  Parses an icon set from decoded IconifyJSON data.
   """
   @spec parse_data(map()) :: {:ok, t()} | {:error, term()}
   def parse_data(data) when is_map(data) do
-    prefix = Map.fetch!(data, "prefix")
-    default_width = data["width"] || 24
-    default_height = data["height"] || 24
+    data = normalize_map(data)
+    defaults = Map.take(data, [:left, :top, :width, :height, :rotate, :h_flip, :v_flip])
 
-    defaults = [
-      width: default_width,
-      height: default_height,
-      left: data["left"] || 0,
-      top: data["top"] || 0
-    ]
+    set =
+      struct!(
+        __MODULE__,
+        data
+        |> Map.take(@keys)
+        |> Map.put(:icons, parse_icons(data, defaults))
+        |> Map.put(:aliases, parse_aliases(data))
+      )
 
-    icons =
-      data
-      |> Map.get("icons", %{})
-      |> Map.new(fn {name, icon_data} ->
-        {name, Icon.new(name, icon_data, defaults)}
-      end)
-
-    aliases =
-      data
-      |> Map.get("aliases", %{})
-      |> Map.new(fn {name, alias_data} ->
-        {name, alias_data["parent"]}
-      end)
-
-    {:ok,
-     %__MODULE__{
-       prefix: prefix,
-       icons: icons,
-       aliases: aliases,
-       width: default_width,
-       height: default_height
-     }}
+    {:ok, set}
   rescue
-    e -> {:error, e}
+    exception -> {:error, exception}
   end
 
   @doc """
-  Gets an icon from the set by name, resolving aliases.
-
-  ## Examples
-
-      {:ok, icon} = Iconify.Set.get(set, "user")
-      :error = Iconify.Set.get(set, "nonexistent")
-
+  Gets an icon from the set by name, resolving aliases and alias transformations.
   """
   @spec get(t(), String.t()) :: {:ok, Icon.t()} | :error
   def get(%__MODULE__{} = set, name) when is_binary(name) do
-    case Map.fetch(set.icons, name) do
-      {:ok, icon} ->
-        {:ok, icon}
-
-      :error ->
-        case Map.fetch(set.aliases, name) do
-          {:ok, parent} -> get(set, parent)
-          :error -> :error
-        end
+    case resolve_icon(set, name, MapSet.new()) do
+      {:ok, icon} -> {:ok, %{icon | name: name}}
+      :error -> :error
     end
   end
 
@@ -185,5 +136,93 @@ defmodule Iconify.Set do
   @spec count(t()) :: non_neg_integer()
   def count(%__MODULE__{icons: icons}) do
     map_size(icons)
+  end
+
+  defp parse_icons(data, defaults) do
+    data
+    |> Map.get(:icons, %{})
+    |> Map.new(fn {name, icon_data} ->
+      {name, build_icon(name, icon_data, defaults)}
+    end)
+  end
+
+  defp build_icon(name, data, defaults) do
+    attrs =
+      defaults
+      |> Map.merge(normalize_map(data))
+      |> Map.put(:name, name)
+      |> Map.update(:rotate, 0, &normalize_rotate/1)
+
+    struct!(Icon, attrs)
+  end
+
+  defp parse_aliases(data) do
+    data
+    |> Map.get(:aliases, %{})
+    |> Map.new(fn {name, alias_data} ->
+      {name, alias_data |> normalize_map() |> Map.take(@alias_keys)}
+    end)
+  end
+
+  defp resolve_icon(set, name, seen) do
+    cond do
+      MapSet.member?(seen, name) ->
+        :error
+
+      icon = Map.get(set.icons, name) ->
+        {:ok, icon}
+
+      alias_data = Map.get(set.aliases, name) ->
+        resolve_alias(set, alias_data, MapSet.put(seen, name))
+
+      true ->
+        :error
+    end
+  end
+
+  defp resolve_alias(set, %{parent: parent} = alias_data, seen) do
+    with {:ok, parent_icon} <- resolve_icon(set, parent, seen) do
+      {:ok, merge_alias(parent_icon, alias_data)}
+    end
+  end
+
+  defp resolve_alias(_set, _alias_data, _seen), do: :error
+
+  defp merge_alias(%Icon{} = icon, alias_data) do
+    icon
+    |> maybe_put(alias_data, :left)
+    |> maybe_put(alias_data, :top)
+    |> maybe_put(alias_data, :width)
+    |> maybe_put(alias_data, :height)
+    |> maybe_put(alias_data, :hidden)
+    |> Map.update!(:rotate, &Integer.mod(&1 + Map.get(alias_data, :rotate, 0), 4))
+    |> Map.update!(:h_flip, &xor(&1, Map.get(alias_data, :h_flip, false)))
+    |> Map.update!(:v_flip, &xor(&1, Map.get(alias_data, :v_flip, false)))
+  end
+
+  defp maybe_put(data, source, key) do
+    case Map.fetch(source, key) do
+      {:ok, value} -> Map.put(data, key, value)
+      :error -> data
+    end
+  end
+
+  defp xor(left, right), do: !!left != !!right
+
+  defp normalize_rotate(value) when is_integer(value), do: Integer.mod(value, 4)
+  defp normalize_rotate(_), do: 0
+
+  defp normalize_map(map) do
+    Map.new(map, fn {key, value} -> {normalize_key(key), value} end)
+  end
+
+  defp normalize_key(key) when is_atom(key), do: key
+
+  defp normalize_key(key) when is_binary(key) do
+    key
+    |> Macro.underscore()
+    |> String.to_existing_atom()
+  rescue
+    ArgumentError -> key
   end
 end

@@ -29,7 +29,7 @@ defmodule Iconify do
 
   """
 
-  alias Iconify.{Icon, Svg}
+  alias Iconify.{Icon, SVG}
 
   @doc """
   Renders an icon as an SVG string.
@@ -54,7 +54,7 @@ defmodule Iconify do
   """
   @spec to_svg(Icon.t(), keyword()) :: String.t()
   def to_svg(%Icon{} = icon, opts \\ []) do
-    Svg.render(icon, opts)
+    SVG.render(icon, opts)
   end
 
   @doc """

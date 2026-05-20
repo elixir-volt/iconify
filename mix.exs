@@ -1,7 +1,7 @@
 defmodule Iconify.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/dannote/iconify"
 
   def project do
@@ -11,6 +11,7 @@ defmodule Iconify.MixProject do
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       package: package(),
       docs: docs(),
       name: "Iconify",
@@ -27,8 +28,35 @@ defmodule Iconify.MixProject do
   defp deps do
     [
       {:jason, "~> 1.4"},
-      {:req, "~> 0.5", optional: true},
-      {:ex_doc, "~> 0.31", only: :dev, runtime: false}
+      {:req, "~> 0.5"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:reach, "~> 2.0", only: [:dev, :test], runtime: false},
+      {:ex_dna, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.35", only: :dev, runtime: false}
+    ]
+  end
+
+  def cli do
+    [preferred_envs: [ci: :test]]
+  end
+
+  defp aliases do
+    [
+      ci: [
+        "compile --warnings-as-errors",
+        "format --check-formatted",
+        "credo --strict",
+        "reach.check --smells --strict",
+        "test",
+        "ex_dna"
+      ],
+      lint: [
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "credo --strict",
+        "reach.check --smells --strict",
+        "ex_dna"
+      ]
     ]
   end
 
