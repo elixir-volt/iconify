@@ -12,11 +12,11 @@ jobs:
     
     strategy:
       matrix:
-        elixir: ['1.15', '1.16', '1.17']
-        otp: ['25', '26', '27']
-        exclude:
-          - elixir: '1.15'
+        include:
+          - elixir: '1.19'
             otp: '27'
+          - elixir: '1.20'
+            otp: '29'
 
     steps:
       - uses: actions/checkout@v4
@@ -47,8 +47,8 @@ jobs:
       
       - uses: erlef/setup-beam@v1
         with:
-          elixir-version: '1.17'
-          otp-version: '27'
+          elixir-version: '1.20'
+          otp-version: '29'
       
       - name: Restore dependencies cache
         uses: actions/cache@v4
