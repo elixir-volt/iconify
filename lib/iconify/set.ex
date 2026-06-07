@@ -3,29 +3,11 @@ defmodule Iconify.Set do
   Represents an Iconify icon set (collection of icons with a common prefix).
   """
 
+  use JSONCodec, case: :camel, fast_path: :json
+
   alias Iconify.Icon
 
   @derive Jason.Encoder
-  @type t :: %__MODULE__{
-          prefix: String.t(),
-          icons: %{String.t() => Icon.t()},
-          aliases: %{String.t() => map()},
-          width: pos_integer(),
-          height: pos_integer(),
-          left: integer(),
-          top: integer(),
-          provider: String.t() | nil,
-          info: map() | nil,
-          chars: map() | nil,
-          categories: map() | nil,
-          themes: map() | nil,
-          prefixes: map() | nil,
-          suffixes: map() | nil,
-          last_modified: integer() | nil,
-          not_found: [String.t()]
-        }
-
-  @enforce_keys [:prefix]
   defstruct [
     :prefix,
     icons: %{},
@@ -45,26 +27,45 @@ defmodule Iconify.Set do
     not_found: []
   ]
 
-  @keys [
-    :prefix,
-    :icons,
-    :aliases,
-    :width,
-    :height,
-    :left,
-    :top,
-    :provider,
-    :info,
-    :chars,
-    :categories,
-    :themes,
-    :prefixes,
-    :suffixes,
-    :last_modified,
-    :not_found
-  ]
+  @type t :: %__MODULE__{
+          prefix: String.t(),
+          icons: %{String.t() => Icon.t()},
+          aliases: %{String.t() => map()},
+          width: pos_integer(),
+          height: pos_integer(),
+          left: integer(),
+          top: integer(),
+          provider: String.t() | nil,
+          info: map() | nil,
+          chars: map() | nil,
+          categories: map() | nil,
+          themes: map() | nil,
+          prefixes: map() | nil,
+          suffixes: map() | nil,
+          last_modified: integer() | nil,
+          not_found: [String.t()]
+        }
+
+  codec(:icons, values: :icon_value)
+  codec(:aliases, values: :alias_value)
+  codec(:not_found, as: "not_found")
 
   @alias_keys [:parent, :left, :top, :width, :height, :rotate, :h_flip, :v_flip, :hidden]
+
+  @doc false
+  def icon_value(name, data, source) do
+    source
+    |> icon_defaults()
+    |> Map.merge(data)
+    |> Map.put("name", name)
+  end
+
+  @doc false
+  def alias_value(_name, data, _source) do
+    data
+    |> normalize_map()
+    |> Map.take(@alias_keys)
+  end
 
   @doc """
   Loads an icon set from a JSON file.
@@ -102,21 +103,7 @@ defmodule Iconify.Set do
   """
   @spec parse_data(map()) :: {:ok, t()} | {:error, term()}
   def parse_data(data) when is_map(data) do
-    data = normalize_map(data)
-    defaults = Map.take(data, [:left, :top, :width, :height, :rotate, :h_flip, :v_flip])
-
-    set =
-      struct!(
-        __MODULE__,
-        data
-        |> Map.take(@keys)
-        |> Map.put(:icons, parse_icons(data, defaults))
-        |> Map.put(:aliases, parse_aliases(data))
-      )
-
-    {:ok, set}
-  rescue
-    exception -> {:error, exception}
+    from_map(data)
   end
 
   @doc """
@@ -173,32 +160,6 @@ defmodule Iconify.Set do
     map_size(icons)
   end
 
-  defp parse_icons(data, defaults) do
-    data
-    |> Map.get(:icons, %{})
-    |> Map.new(fn {name, icon_data} ->
-      {name, build_icon(name, icon_data, defaults)}
-    end)
-  end
-
-  defp build_icon(name, data, defaults) do
-    attrs =
-      defaults
-      |> Map.merge(normalize_map(data))
-      |> Map.put(:name, name)
-      |> Map.update(:rotate, 0, &normalize_rotate/1)
-
-    struct!(Icon, attrs)
-  end
-
-  defp parse_aliases(data) do
-    data
-    |> Map.get(:aliases, %{})
-    |> Map.new(fn {name, alias_data} ->
-      {name, alias_data |> normalize_map() |> Map.take(@alias_keys)}
-    end)
-  end
-
   defp resolve_icon(set, name, seen) do
     cond do
       MapSet.member?(seen, name) ->
@@ -244,8 +205,9 @@ defmodule Iconify.Set do
 
   defp xor(left, right), do: !!left != !!right
 
-  defp normalize_rotate(value) when is_integer(value), do: Integer.mod(value, 4)
-  defp normalize_rotate(_), do: 0
+  defp icon_defaults(data) do
+    Map.take(data, ["left", "top", "width", "height", "rotate", "hFlip", "vFlip"])
+  end
 
   defp normalize_map(map) do
     Map.new(map, fn {key, value} -> {normalize_key(key), value} end)

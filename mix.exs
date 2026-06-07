@@ -28,6 +28,7 @@ defmodule Iconify.MixProject do
   defp deps do
     [
       {:jason, "~> 1.4"},
+      {:json_codec, path: "../json_codec"},
       {:req, "~> 0.5"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:reach, "~> 2.0", only: [:dev, :test], runtime: false},

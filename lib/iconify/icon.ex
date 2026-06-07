@@ -3,7 +3,22 @@ defmodule Iconify.Icon do
   Represents a single normalized Iconify icon.
   """
 
+  use JSONCodec, case: :camel, fast_path: :json
+
   @derive Jason.Encoder
+  defstruct [
+    :name,
+    :body,
+    width: 16,
+    height: 16,
+    left: 0,
+    top: 0,
+    rotate: 0,
+    h_flip: false,
+    v_flip: false,
+    hidden: false
+  ]
+
   @type t :: %__MODULE__{
           name: String.t(),
           body: String.t(),
@@ -17,19 +32,11 @@ defmodule Iconify.Icon do
           hidden: boolean()
         }
 
-  @enforce_keys [:name, :body]
-  defstruct [
-    :name,
-    :body,
-    width: 16,
-    height: 16,
-    left: 0,
-    top: 0,
-    rotate: 0,
-    h_flip: false,
-    v_flip: false,
-    hidden: false
-  ]
+  codec(:rotate, transform: :normalize_rotate)
+
+  @doc false
+  def normalize_rotate(value) when is_integer(value), do: Integer.mod(value, 4)
+  def normalize_rotate(_value), do: 0
 
   @doc """
   Returns the viewBox string for this icon.
