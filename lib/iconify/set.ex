@@ -46,18 +46,26 @@ defmodule Iconify.Set do
           not_found: [String.t()]
         }
 
-  codec(:icons, values: :icon_value)
+  codec(:icons, decode_values: :icon_value, values_source: :icon_defaults)
   codec(:aliases, values: :alias_value)
   codec(:not_found, as: "not_found")
 
   @alias_keys [:parent, :left, :top, :width, :height, :rotate, :h_flip, :v_flip, :hidden]
 
   @doc false
-  def icon_value(name, data, source) do
-    source
-    |> icon_defaults()
-    |> Map.merge(data)
-    |> Map.put("name", name)
+  def icon_value(name, data, defaults) do
+    %Icon{
+      name: name,
+      body: Map.fetch!(data, "body"),
+      width: Map.get(data, "width", Map.get(defaults, "width", 16)),
+      height: Map.get(data, "height", Map.get(defaults, "height", 16)),
+      left: Map.get(data, "left", Map.get(defaults, "left", 0)),
+      top: Map.get(data, "top", Map.get(defaults, "top", 0)),
+      rotate: Icon.normalize_rotate(Map.get(data, "rotate", Map.get(defaults, "rotate", 0))),
+      h_flip: Map.get(data, "hFlip", Map.get(defaults, "hFlip", false)),
+      v_flip: Map.get(data, "vFlip", Map.get(defaults, "vFlip", false)),
+      hidden: Map.get(data, "hidden", false)
+    }
   end
 
   @doc false
@@ -205,7 +213,8 @@ defmodule Iconify.Set do
 
   defp xor(left, right), do: !!left != !!right
 
-  defp icon_defaults(data) do
+  @doc false
+  def icon_defaults(data) do
     Map.take(data, ["left", "top", "width", "height", "rotate", "hFlip", "vFlip"])
   end
 
