@@ -156,6 +156,17 @@ Icon sets are available from:
 - npm packages: `@iconify-json/{prefix}`
 - Iconify API: `api.iconify.design`
 
+## Part of Elixir Volt
+
+iconify is the core Iconify data model for Elixir: parse icon sets, resolve aliases, transform, and render SVG.
+
+It is part of a frontend stack that runs inside the BEAM — builds, JS
+runtimes, icons, and Vue-to-LiveView compilation as supervised parts of the
+application instead of external toolchain processes. See the
+[Elixir Volt](https://github.com/elixir-volt) organization for the rest, and
+[Building Blocks for the Future Web](https://github.com/elixir-vibe/building-blocks)
+for the thesis, architecture, and roadmap that tie them together.
+
 ## License
 
 MIT
