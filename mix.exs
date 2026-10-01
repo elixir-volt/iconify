@@ -28,7 +28,7 @@ defmodule Iconify.MixProject do
   defp deps do
     [
       {:jason, "~> 1.4"},
-      {:json_codec, path: "../json_codec"},
+      {:json_codec, "~> 0.3"},
       {:req, "~> 0.5"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:reach, "~> 2.0", only: [:dev, :test], runtime: false},
@@ -38,11 +38,12 @@ defmodule Iconify.MixProject do
   end
 
   def cli do
-    [preferred_envs: [ci: :test]]
+    [preferred_envs: [ci: :test, "test.e2e": :test]]
   end
 
   defp aliases do
     [
+      "test.e2e": ["test --only e2e"],
       ci: [
         "compile --warnings-as-errors",
         "format --check-formatted",
