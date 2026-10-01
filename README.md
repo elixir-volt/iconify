@@ -31,7 +31,7 @@ It is the core package used by [`phoenix_iconify`](https://hex.pm/packages/phoen
 ```elixir
 def deps do
   [
-    {:iconify, "~> 0.2.0"}
+    {:iconify, "~> 0.3"}
   ]
 end
 ```
