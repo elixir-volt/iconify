@@ -3,7 +3,7 @@ defmodule Iconify.Icon do
   Represents a single normalized Iconify icon.
   """
 
-  use JSONCodec, case: :camel, fast_path: :json
+  use JSONCodec, case: :camel
 
   @derive Jason.Encoder
   defstruct [

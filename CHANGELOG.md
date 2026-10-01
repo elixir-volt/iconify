@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Leave unknown names out of `Iconify.Fetcher.fetch_icons/2` instead of raising, so `fetch_icon/2` returns `{:error, :not_found}` for them as documented.
+- Parse icon sets and icons with JSONCodec 0.3.
+
 ## v0.3.0
 
 - Replace SVG IDs during rendering with Erlang's `:xmerl` to avoid duplicate ID collisions

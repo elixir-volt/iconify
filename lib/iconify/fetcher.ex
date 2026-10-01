@@ -44,7 +44,7 @@ defmodule Iconify.Fetcher do
   @doc """
   Fetches specific icons from the Iconify API.
 
-  Returns a map of icon name to Icon struct.
+  Returns a map of icon name to Icon struct. Names the set doesn't have are left out.
 
   ## Examples
 
@@ -60,8 +60,7 @@ defmodule Iconify.Fetcher do
 
     with {:ok, json} <- req_get_body(url),
          {:ok, set} <- Set.parse(json) do
-      icons = Map.new(names, fn name -> {name, Set.get!(set, name)} end)
-      {:ok, icons}
+      {:ok, for(name <- names, {:ok, icon} <- [Set.get(set, name)], into: %{}, do: {name, icon})}
     end
   end
 

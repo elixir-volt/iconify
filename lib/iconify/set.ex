@@ -3,7 +3,7 @@ defmodule Iconify.Set do
   Represents an Iconify icon set (collection of icons with a common prefix).
   """
 
-  use JSONCodec, case: :camel, fast_path: :json
+  use JSONCodec, case: :camel
 
   alias Iconify.Icon
 
